@@ -34,7 +34,7 @@ public class SweepView extends ViewGroup {
 
         //ViewDragHelper，用来处理滑动和拖拽的
         //创建实例
-        mViewDragHelper = ViewDragHelper.create(this, null);
+        mViewDragHelper = ViewDragHelper.create(this, new MyDragCallback());
 
     }
 
@@ -66,6 +66,7 @@ public class SweepView extends ViewGroup {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        //核心逻辑方法
         mViewDragHelper.processTouchEvent(event);
         //消费touch
         return true;
@@ -73,9 +74,66 @@ public class SweepView extends ViewGroup {
 
     class MyDragCallback extends ViewDragHelper.Callback{
 
+        /**
+         *
+         * @param view 是的是touch的view，不是自己，是自己的孩子
+         * @param i 点的标记
+         * @return viewdraghelper是否继续分析处理child的相关touch事件
+         */
         @Override
         public boolean tryCaptureView(@NonNull View view, int i) {
-            return false;
+            System.out.println("调用tryCaptureView");
+            System.out.println("触摸的是否是内容控件，contentview:"+(mContentView==view));
+            System.out.println("触摸的是否是删除控件，deleteview:"+(mDeleteView==view));
+            return mContentView==view || mDeleteView==view;
+        }
+
+        /**
+         * 捕获水平方向移动的位移数据，此方向调用后，view就会动了
+         * @param child 是哪个孩子移动了
+         * @param left 父容器的左侧
+         * @param dx 增量值
+         * @return 你想我怎么动
+         */
+        @Override
+        public int clampViewPositionHorizontal(@NonNull View child, int left, int dx) {
+            return left;
+        }
+
+        /**
+         * 当view的位置改变的时候回调
+         * @param changedView 哪个view的位置改变了
+         * @param left changedview的left
+         * @param top
+         * @param dx 增量值
+         * @param dy
+         */
+        @Override
+        public void onViewPositionChanged(View changedView, int left, int top, int dx, int dy) {
+            //ui刷新，兼容2.3的系统和4.0的系统
+            invalidate();
+
+            //contentview的宽度
+            int contentviewWidth=mContentView.getWidth();
+            int deleteviewWidth=mDeleteView.getWidth();
+            int deleteviewHeight=mDeleteView.getHeight();
+
+            if (changedView==mContentView){
+                //如果contentview的位置改变了，相应地就需要改变deleteview的位置
+                int devLeft=contentviewWidth+left;
+                int devRight=contentviewWidth+left+deleteviewWidth;
+                mDeleteView.layout(devLeft,0,devRight,deleteviewHeight);
+            }else{
+                //如果deleteview位置改变了，就需要改变contentview的位置
+                int conLeft=left-contentviewWidth;
+                int conRight=left;
+                mContentView.layout(conLeft,0,left,deleteviewHeight);
+            }
+        }
+
+        @Override
+        public void onViewReleased(@NonNull View releasedChild, float xvel, float yvel) {
+            super.onViewReleased(releasedChild, xvel, yvel);
         }
     }
 }
