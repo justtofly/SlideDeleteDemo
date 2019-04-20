@@ -1,7 +1,10 @@
 package com.fly.slidedeletedemo;
 
 import android.content.Context;
+import android.support.annotation.NonNull;
+import android.support.v4.widget.ViewDragHelper;
 import android.util.AttributeSet;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 
@@ -12,6 +15,7 @@ import android.view.ViewGroup;
 public class SweepView extends ViewGroup {
     private View mContentView;
     private View mDeleteView;
+    private ViewDragHelper mViewDragHelper;
 
     public SweepView(Context context) {
         super(context);
@@ -28,6 +32,9 @@ public class SweepView extends ViewGroup {
         mContentView = getChildAt(0);
         mDeleteView = getChildAt(1);
 
+        //ViewDragHelper，用来处理滑动和拖拽的
+        //创建实例
+        mViewDragHelper = ViewDragHelper.create(this, null);
 
     }
 
@@ -35,25 +42,40 @@ public class SweepView extends ViewGroup {
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec);
         //测量孩子，contentView,使用它父亲的宽度和高度
-        mContentView.measure(widthMeasureSpec,heightMeasureSpec);
+        mContentView.measure(widthMeasureSpec, heightMeasureSpec);
 
         //deleteView
         LayoutParams layoutParams = mDeleteView.getLayoutParams();
         int deleteWidthMeasureSpec = MeasureSpec.makeMeasureSpec(layoutParams.width, MeasureSpec.EXACTLY);
         int deleteHeightMeasureSpec = MeasureSpec.makeMeasureSpec(layoutParams.height, MeasureSpec.EXACTLY);
-        mDeleteView.measure(deleteWidthMeasureSpec,deleteHeightMeasureSpec);
+        mDeleteView.measure(deleteWidthMeasureSpec, deleteHeightMeasureSpec);
     }
 
     @Override
     protected void onLayout(boolean changed, int l, int t, int r, int b) {
         //布局
-        int contentWidth=mContentView.getMeasuredWidth();
-        int deleteWidth=mDeleteView.getMeasuredWidth();
+        int contentWidth = mContentView.getMeasuredWidth();
+        int deleteWidth = mDeleteView.getMeasuredWidth();
 
         //contentView的布局
-        mContentView.layout(0,0,contentWidth,mContentView.getMeasuredHeight());
+        mContentView.layout(0, 0, contentWidth, mContentView.getMeasuredHeight());
 
         //deleteView的布局
-        mDeleteView.layout(contentWidth,0,contentWidth+deleteWidth,mDeleteView.getMeasuredHeight());
+        mDeleteView.layout(contentWidth, 0, contentWidth + deleteWidth, mDeleteView.getMeasuredHeight());
+    }
+
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
+        mViewDragHelper.processTouchEvent(event);
+        //消费touch
+        return true;
+    }
+
+    class MyDragCallback extends ViewDragHelper.Callback{
+
+        @Override
+        public boolean tryCaptureView(@NonNull View view, int i) {
+            return false;
+        }
     }
 }
